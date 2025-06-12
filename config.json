@@ -1,6 +1,6 @@
 {
   "facebookAccount": {
-    "email": "cm",
+    "email": "",
     "password": "",
     "2FASecret": "",
     "i_user": "",
@@ -17,13 +17,13 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "100071288633689", "61561431250805", "61569320200485","100090336901384"],
+    "61556251307831", "61561431250805",],
   "whiteListMode": {
     "enable": false,
-    "whiteListIds": ["100071288633689","61567716255506",""],
+    "whiteListIds": ["61556251307831","61567716255506",""],
     "notes": "if you enable this feature, only the ids in the whiteListIds section can use the bot"
   },
-  "nickNameBot": "GAYLIF",
+  "nickNameBot": "",
   "prefix": "/",
   "database": {
     "type": "sqlite",
