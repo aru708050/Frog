@@ -2,49 +2,44 @@ module.exports = {
 	config: {
 		name: "balance",
 		aliases: ["bal"],
-		version: "1.1",
-		author: "NTKhang",
+		version: "1.2",
+		author: "NTKhang + Modified by Ariyan",
 		countDown: 5,
 		role: 0,
 		shortDescription: {
-			vi: "xem số tiền của bạn",
 			en: "view your money"
 		},
 		longDescription: {
-			vi: "xem số tiền hiện có của bạn hoặc người được tag",
 			en: "view your money or the money of the tagged person"
 		},
 		category: "economy",
 		guide: {
-			vi: "   {pn}: xem số tiền của bạn"
-				+ "\n   {pn} <@tag>: xem số tiền của người được tag",
-			en: "   {pn}: view your money"
-				+ "\n   {pn} <@tag>: view the money of the tagged person"
+			en: "{pn}: view your balance\n{pn} @tag: view someone else's balance"
 		}
 	},
 
-	langs: {
-		vi: {
-			money: "Bạn đang có %1$",
-			moneyOf: "%1 đang có %2$"
-		},
-		en: {
-			money: "You have %1$",
-			moneyOf: "%1 has %2$"
+	onStart: async function ({ message, usersData, event }) {
+		function formatCurrency(amount) {
+			if (amount >= 1e12) return (amount / 1e12).toFixed(2).replace(/\.00$/, "") + "T$";
+			if (amount >= 1e9) return (amount / 1e9).toFixed(2).replace(/\.00$/, "") + "B$";
+			if (amount >= 1e6) return (amount / 1e6).toFixed(2).replace(/\.00$/, "") + "M$";
+			if (amount >= 1e3) return (amount / 1e3).toFixed(2).replace(/\.00$/, "") + "K$";
+			return amount + "$";
 		}
-	},
 
-	onStart: async function ({ message, usersData, event, getLang }) {
 		if (Object.keys(event.mentions).length > 0) {
 			const uids = Object.keys(event.mentions);
 			let msg = "";
 			for (const uid of uids) {
-				const userMoney = await usersData.get(uid, "money");
-				msg += getLang("moneyOf", event.mentions[uid].replace("@", ""), userMoney) + '\n';
+				const money = await usersData.get(uid, "money");
+				const name = event.mentions[uid].replace("@", "");
+				msg += `Baby, ${name}'s balance is ${formatCurrency(money)}\n`;
 			}
-			return message.reply(msg);
+			return message.reply(msg.trim());
 		}
+
 		const userData = await usersData.get(event.senderID);
-		message.reply(getLang("money", userData.money));
+		const formattedMoney = formatCurrency(userData.money);
+		return message.reply(`Baby, Your balance is ${formattedMoney}`);
 	}
 };
