@@ -1,37 +1,56 @@
-const axios = require('axios');
-const baseApiUrl = async () => {
-  const base = await axios.get(`https://raw.githubusercontent.com/Blankid018/D1PT0/main/baseApiUrl.json`);
-  return base.data.api;
-}; 
+const fs = require("fs");
+const path = require("path");
+const axios = require("axios");
+
 module.exports = {
   config: {
     name: "dalle",
-    aliases: ["bing", "create", "imagine"],
-    version: "1.0",
-    author: "Dipto",
-    countDown: 15,
-    role: 0,
-    description: "Generate images by Unofficial Dalle3",
-    category: "download",
-    guide: { en: "{pn} prompt" }
-  }, 
-  onStart: async({ api, event, args }) => {
-    const prompt = (event.messageReply?.body.split("dalle")[1] || args.join(" ")).trim();
-    if (!prompt) return api.sendMessage("❌| Wrong Format. ✅ | Use: 17/18 years old boy/girl watching football match on TV with 'Dipto' and '69' written on the back of their dress, 4k", event.threadID, event.messageID);
+    author: "Nyx",
+    category: "GEN",
+    usePrefix: true,
+    role: 0
+  },
+
+  onStart: async ({ args, message, api, event }) => {
+    const prompt = args.join(" ");
+    if (!prompt) {
+    message.reply("❌ Please provide a prompt for image generation.");
+    }
     try {
-       //const cookies = "cookies here (_U value)";
-const cookies = ["1WMSMa5rJ9Jikxsu_KvCxWmb0m4AwilqsJhlkC1whxRDp2StLDR-oJBnLWpoppENES3sBh9_OeFE6BT-Kzzk_46_g_z_NPr7Du63M92maZmXZYR91ymjlxE6askzY9hMCdtX-9LK09sUsoqokbOwi3ldOlm0blR_0VLM3OjdHWcczWjvJ78LSUT7MWrdfdplScZbtHfNyOFlDIGkOKHI7Bg"];
-const randomCookie = cookies[Math.floor(Math.random() * cookies.length)];
-      const wait = api.sendMessage("Wait koro baby 😽", event.threadID);
-      const response = await axios.get(`${await baseApiUrl()}/dalle?prompt=${prompt}&key=dipto008&cookies=${randomCookie}`);
-const imageUrls = response.data.imgUrls || [];
-      if (!imageUrls.length) return api.sendMessage("Empty response or no images generated.", event.threadID, event.messageID);
-      const images = await Promise.all(imageUrls.map(url => axios.get(url, { responseType: 'stream' }).then(res => res.data)));
-    api.unsendMessage(wait.messageID);
-   api.sendMessage({ body: `✅ | Here's Your Generated Photo 😘`, attachment: images }, event.threadID, event.messageID);
+      const loadingMsg = await message.reply("⏳ Generating DALL-E image, please wait...");
+      const encodedPrompt = encodeURIComponent(prompt);
+      const apiUrl = `https://www.noobz-api.rf.gd/api/dalle-3?prompt=${encodedPrompt}`;
+      const response = await axios.get(apiUrl);
+      const imageUrl = response.data;
+      const pathName = path.join(__dirname, "cache");
+      if (!fs.existsSync(pathName)) {
+        fs.mkdirSync(pathName);
+      }
+      const imagePath = path.join(pathName, `dalle_${Date.now()}.png`);
+      const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+      fs.writeFileSync(imagePath, imageResponse.data);
+      await message.reply({
+        body: `🎨 DALL-E 3 generated image for: ${prompt}`,
+        attachment: fs.createReadStream(imagePath)
+      });
+      if (loadingMsg) {
+        await message.unsend(loadingMsg.messageID);
+      }
+      setTimeout(() => {
+        try {
+          if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath);
+          }
+        } catch (err) {
+          return;
+        }
+      }, 1000);
+
     } catch (error) {
-      console.error(error);
-      api.sendMessage(`Generation failed!\nError: ${error.message}`, event.threadID, event.messageID);
+      message.reply("❌ Error generating image. Please try again later.");
+      if (loadingMsg) {
+        await message.unsend(loadingMsg.messageID);
+      }
     }
   }
-}
+};

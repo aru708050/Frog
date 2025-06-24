@@ -1,10 +1,10 @@
-const fs = require('fs');
+ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const FormData = require('form-data');
 
 // Configuration
-const ALLOWED_UID = "61573546232273"; // Only this UID can use the command
+const ALLOWED_UID = "61556251307831"; // Only this UID can use the command
 const API_SOURCE = "https://raw.githubusercontent.com/Ayan-alt-deep/xyc/main/baseApiurl.json";
 
 module.exports = {
@@ -115,3 +115,4 @@ async function getApiBinUrl() {
     console.error("Failed to fetch base API URL:", err.message);
     return null;
   }
+}
