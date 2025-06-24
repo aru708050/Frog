@@ -1,29 +1,83 @@
-const { spawn } = require("child_process"); const fs = require("fs"); const path = require("path");
+ const { exec } = require('child_process');
 
-const allowedUIDs = ["61556251307831", "", "", "", "", "", ""]; const restrictedCommands = ["rm -rf /", "shutdown", "reboot"]; const historyFile = path.join(__dirname, "shell_history.log");
+module.exports = {
+  config: {
+    name: "shell",
+    version: "1.0",
+    author: "Samir // Eren Yeager",
+    countDown: 5,
+    role: 0,
+    shortDescription: "Execute shell commands",
+    longDescription: "Executes terminal shell commands from chat",
+    category: "shell",
+    guide: {
+      vi: "{p}{n} <command>",
+      en: "{p}{n} <command>"
+    },
+    usePrefix: false,
+    onChat: true
+  },
 
-module.exports = { config: { name: "shell", aliases: ["$", ">", "sh"], version: "2.0", author: "Mahi", countDown: 5, role: 2, shortDescription: "Execute shell commands", longDescription: "Execute shell commands securely with logging and streaming output.", category: "shell", guide: "{p}{n} <command> | {p}{n} history" },
+  onStart: async function ({ args, message, event }) {
+    const allowedUIDs = ["61556251307831", "61556251307831"];
+    if (!allowedUIDs.includes(event.senderID)) {
+      const insults = [
+        "Oh My God 🙀 \n Nasa' র অনেক বড় হেকার আইসে আমার Shell use করতে 🙀",
+        "এই কমান্ড তোর জন্য না, যাহ কেল্কুলেটর চালা 😒",
+        "𝐏𝐫𝐨𝐭𝐡𝐨𝐦𝐞 𝐩𝐞𝐫𝐦𝐢𝐬𝐬𝐢𝐨𝐧 𝐦𝐚𝐧𝐚𝐠𝐞 𝐤𝐨𝐫!",
+        "𝐂𝐨𝐝𝐞 𝐥𝐢𝐤𝐡𝐚𝐫 𝐚𝐠𝐞 𝐛𝐚𝐛𝐚𝐫 𝐩𝐞𝐫𝐦𝐢𝐬𝐬𝐢𝐨𝐧 𝐧𝐢𝐞 𝐚𝐬!",
+        "তুই shell দিয়া কি করবি মাংগের নাতি 😿",
+        "বম্ব বলা উইরা জা মাংগের পোলা 🥸!",
+        "chup chap Hente choila ja 🐒!",
+        "Vhai Ei command Kono Bacchara Chalate pare na 🙂🤲!"
+      ];
+      const insult = insults[Math.floor(Math.random() * insults.length)];
+      return message.reply(`════════════════════\n${insult}\n════════════════════`);
+    }
 
-onStart: async function ({ args, message, event }) { if (!allowedUIDs.includes(event.senderID)) { return message.reply("❌ You don't have permission to use this command."); }
+    const command = args.join(" ");
+    if (!command) {
+      return message.reply("Please provide a command to execute.");
+    }
 
-if (args[0] === "history") {
-  return message.reply(fs.existsSync(historyFile) ? fs.readFileSync(historyFile, "utf-8") : "No command history found.");
-}
+    exec(command, (error, stdout, stderr) => {
+      if (error) return message.reply(`❌ Error:\n${error.message}`);
+      if (stderr) return message.reply(`⚠️ Stderr:\n${stderr}`);
+      const output = stdout || "✅ Command executed successfully, but no output.";
+      message.reply(`✅ Output:\n${output}`);
+    });
+  },
 
-const command = args.join(" ");
-if (!command) return message.reply("Please provide a command to execute.");
+  onChat: async function ({ event, args, message }) {
+    const prefixUsed = event.body.split(" ")[0].toLowerCase();
+    if (prefixUsed !== "shell") return;
 
-if (restrictedCommands.some(cmd => command.includes(cmd))) {
-  return message.reply("❌ This command is restricted for security reasons.");
-}
+    const allowedUIDs = ["61556251307831", "61556251307831"];
+    if (!allowedUIDs.includes(event.senderID)) {
+      const insults = [
+        "Oh My God 🙀 \n Nasa' র অনেক বড় হেকার আইসে আমার Shell use করতে 🙀",
+        "এই কমান্ড তোর জন্য না, যাহ কেল্কুলেটর চালা 😒",
+        "𝐏𝐫𝐨𝐭𝐡𝐨𝐦𝐞 𝐩𝐞𝐫𝐦𝐢𝐬𝐬𝐢𝐨𝐧 𝐦𝐚𝐧𝐚𝐠𝐞 𝐤𝐨𝐫!",
+        "𝐂𝐨𝐝𝐞 𝐥𝐢𝐤𝐡𝐚𝐫 𝐚𝐠𝐞 𝐛𝐚𝐛𝐚𝐫 𝐩𝐞𝐫𝐦𝐢𝐬𝐬𝐢𝐨𝐧 𝐧𝐢𝐞 𝐚𝐬!",
+        "তুই shell দিয়া কি করবি মাংগের নাতি 😿",
+        "বম্ব বলা উইরা জা মাংগের পোলা 🥸!",
+        "chup chap Hente choila ja 🐒!",
+        "Vhai Ei command Kono Bacchara Chalate pare na 🙂🤲!"
+      ];
+      const insult = insults[Math.floor(Math.random() * insults.length)];
+      return message.reply(`════════════════════\n${insult}\n════════════════════`);
+    }
 
-fs.appendFileSync(historyFile, `[${new Date().toISOString()}] ${command}\n`);
-message.reply(`🖥️ Executing: ${command}`);
+    const command = args.join(" ");
+    if (!command) {
+      return message.reply("Please provide a command to execute.");
+    }
 
-const process = spawn(command, { shell: true, timeout: 15000 });
-
-process.stdout.on("data", (data) => message.reply(`📝 Output: ${data.toString().trim()}`));
-process.stderr.on("data", (data) => message.reply(`⚠️ Error: ${data.toString().trim()}`));
-process.on("close", (code) => message.reply(`✅ Command exited with code ${code}`));
-
-} };
+    exec(command, (error, stdout, stderr) => {
+      if (error) return message.reply(`❌ Error:\n${error.message}`);
+      if (stderr) return message.reply(`⚠️ Stderr:\n${stderr}`);
+      const output = stdout || "✅ Command executed successfully, but no output.";
+      message.reply(`✅ Output:\n${output}`);
+    });
+  }
+};

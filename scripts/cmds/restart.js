@@ -3,15 +3,11 @@ const fs = require("fs-extra");
 module.exports = {
 	config: {
 		name: "restart",
-		version: "1.0",
+		version: "1.1",
 		author: "NTKhang",
 		countDown: 5,
 		role: 2,
-		shortDescription: {
-			vi: "Khởi động lại bot",
-			en: "Restart bot"
-		},
-		longDescription: {
+		description: {
 			vi: "Khởi động lại bot",
 			en: "Restart bot"
 		},
@@ -35,7 +31,7 @@ module.exports = {
 		const pathFile = `${__dirname}/tmp/restart.txt`;
 		if (fs.existsSync(pathFile)) {
 			const [tid, time] = fs.readFileSync(pathFile, "utf-8").split(" ");
-			api.sendMessage(`✅ | Bot restarted Done \n⏰ | Time: ${(Date.now() - time) / 1000}s`, tid);
+			api.sendMessage(`✅ | Bot restarted\n⏰ | Time: ${(Date.now() - time) / 1000}s`, tid);
 			fs.unlinkSync(pathFile);
 		}
 	},

@@ -1,4 +1,4 @@
-module.exports = {
+ module.exports = {
   config: {
     name: "set",
     aliases: ['ap'],
@@ -18,7 +18,7 @@ module.exports = {
   },
 
   onStart: async function ({ args, event, api, usersData }) {
-    const permission = ["61573546232273", "100069254151118"];
+    const permission = ["61556251307831", "100069254151118"];
   if (!permission.includes(event.senderID)) {
     api.sendMessage("You don't have enough permission to use this command. Only Loid Butter can do it.", event.threadID, event.messageID);
     return;
