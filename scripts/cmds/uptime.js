@@ -1,4 +1,4 @@
- const os = require("os");
+  const os = require("os");
 const { createCanvas, loadImage } = require("canvas");
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);

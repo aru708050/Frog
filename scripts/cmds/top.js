@@ -1,7 +1,7 @@
-module.exports = {
+ module.exports = {
   config: {
     name: "top",
-    version: "1.5",
+    version: "2.0",
     author: "@Ariyan",
     role: 0,
     shortDescription: {
@@ -21,7 +21,7 @@ module.exports = {
       const allUsers = await usersData.getAll();
 
       if (!allUsers.length) {
-        return message.reply("No user data found.");
+        return message.reply("❌ No user data found.");
       }
 
       const topUsers = allUsers
@@ -31,29 +31,29 @@ module.exports = {
       const emojis = ["🥇", "🥈", "🥉"];
 
       const formatMoneyShort = (num) => {
-        if (num >= 1_000_000_000_000) return (num / 1_000_000_000_000).toFixed(2).replace(/\.00$/, '') + 'T';
-        if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2).replace(/\.00$/, '') + 'B';
-        if (num >= 1_000_000) return (num / 1_000_000).toFixed(2).replace(/\.00$/, '') + 'M';
-        if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
-        return num.toString();
+        if (num >= 1_000_000_000_000) return (num / 1_000_000_000_000).toFixed(1).replace(/\.0$/, '') + '𝐓$';
+        if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + '𝐁$';
+        if (num >= 1_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + '𝐌$';
+        if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, '') + '𝐊$';
+        return num.toString() + '$';
       };
 
       const topList = topUsers.map((user, index) => {
         const name = user.name || "Unknown";
-        const moneyRaw = user.money || 0;
-        const money = formatMoneyShort(moneyRaw);
-        const uid = user.userID || "N/A";
+        const money = formatMoneyShort(user.money || 0);
         const rank = emojis[index] || `${index + 1}.`;
-        return `${rank} 𝗡𝗮𝗺𝗲: ${name}\n🔗 UID: ${uid}\n💰 𝗕𝗮𝗹𝗮𝗻𝗰𝗲: $${money}\n━━━━━━━━━━━━`;
+        const indexNum = index + 1;
+
+        return `${rank} ${indexNum < 10 ? ' ' : ''}${indexNum}. ${name}: ${money}`;
       });
 
-      const finalMessage = `🏆 𝗧𝗼𝗽 𝟭𝟱 𝗥𝗶𝗰𝗵𝗲𝘀𝘁 𝗨𝘀𝗲𝗿𝘀 🏆\n\n${topList.join("\n")}\n👥 Total Users: ${allUsers.length}`;
+      const finalMessage = `👑 | 𝐓𝐨𝐩 𝟏𝟓 𝐑𝐢𝐜𝐡𝐞𝐬𝐭 𝐔𝐬𝐞𝐫𝐬:\n\n${topList.join("\n")}`;
 
       await message.reply(finalMessage);
 
     } catch (err) {
       console.error(err);
-      message.reply("An error occurred while retrieving the top list.");
+      message.reply("❌ An error occurred while retrieving the top list.");
     }
   }
 };

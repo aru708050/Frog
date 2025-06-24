@@ -1,67 +1,196 @@
-const axios = require("axios");
-const path = require("path");
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
+const ffmpeg = require('ffmpeg-static');
+const FormData = require('form-data');
+
+const ok = 'xyz';
+const alldlAPI = `https://smfahim.${ok}/alldl`;
+
+const cacheFolder = path.join(__dirname, 'cache');
+if (!fs.existsSync(cacheFolder)) {
+  fs.mkdirSync(cacheFolder, { recursive: true });
+}
+
+async function downloadViaAllDL(url) {
+  const res = await axios.get(`${alldlAPI}?url=${encodeURIComponent(url)}`);
+  const downloadURL = res.data?.links?.sd || res.data?.links?.hd;
+  if (!downloadURL) throw new Error("Couldn't fetch downloadable video link");
+  return downloadURL;
+}
+
+async function silentVideoToAudio(videoUrl) {
+  const tempFile = path.join(cacheFolder, `temp_${Date.now()}.mp3`);
+  await new Promise((resolve, reject) => {
+    exec(`${ffmpeg} -i "${videoUrl}" -vn -acodec libmp3lame -y "${tempFile}"`,
+      (error) => error ? reject(error) : resolve()
+    );
+  });
+  return tempFile;
+}
+
+async function shazamDetection(audioPath) {
+  try {
+    const form = new FormData();
+    form.append('data', fs.createReadStream(audioPath), {
+      filename: 'audio.mp3',
+      contentType: 'audio/mpeg'
+    });
+
+    const addr = (await axios.get('https://raw.githubusercontent.com/Tanvir0999/stuffs/main/raw/addresses.json')).data.main;
+    const response = await axios.post(`${addr}/shazam`, form, {
+      headers: form.getHeaders()
+    });
+
+    return response.data;
+  } finally {
+    fs.unlink(audioPath, () => {});
+  }
+}
+
+async function searchAndDownloadSong(query) {
+  const isURL = /^https?:\/\//.test(query);
+  const searchResponse = await axios.get('http://193.149.164.168:2115/api/ytsearch', {
+    params: isURL ? { url: query } : { query }
+  });
+
+  if (!searchResponse.data.items?.length) throw new Error('No results found');
+  const video = searchResponse.data.items[0];
+  const cookies = fs.existsSync('cookie.txt') ? fs.readFileSync('cookie.txt', 'utf-8') : '';
+  const addr = (await axios.get('https://raw.githubusercontent.com/Tanvir0999/stuffs/main/raw/addresses.json')).data.yt;
+
+  const res = await axios.post(addr, {
+    url: video.url,
+    filesize: 26,
+    format: 'audio',
+    cookies
+  });
+
+  return {
+    audioUrl: res.data.url,
+    videoInfo: video
+  };
+}
 
 module.exports = {
   config: {
     name: "song",
-    version: "2.2",
-    author: "@RI F AT",
-    countDown: 5,
-    role: 0,
-    shortDescription: "Search & send song audio",
-    longDescription: "Send MP3 by searching or identifying from reply",
-    category: "media",
+    aliases: ["music", "sing"],
+    version: "5.1",
+    author: "Mahi--",
+    description: "Identify songs from audio/video, video links or search",
+    category: "Utility",
     guide: {
-      en: "{pn} <song name> or reply to audio/video"
+      en: "Reply to audio/video or link:\n{pn} -i (info only)\n{pn} (info + audio)\n\nSearch:\n{pn} <query>\n{pn} <YT/video link>"
     }
   },
 
-  onStart: async function ({ api, event, args }) {
-    const queryInput = args.join(" ");
-    const { messageReply } = event;
-
+  onStart: async function ({ api, event, args, message }) {
     try {
-      let searchQuery = queryInput;
+      message.reaction("🔍", event.messageID);
+      const isReply = event.messageReply;
+      const infoOnly = args.includes("-i");
+      const input = args.join(" ");
 
-      // Song recognition from reply
-      if (!searchQuery && messageReply?.attachments?.[0]?.url) {
-        const fileUrl = messageReply.attachments[0].url;
-        const recognizeRes = await axios.get(
-          `https://music-recognition.onrender.com/identify?audioUrl=${encodeURIComponent(fileUrl)}`
-        );
-        const { title, artist } = recognizeRes?.data || {};
-        if (!title || !artist) return api.sendMessage("Couldn't recognize the song.", event.threadID, event.messageID);
-        searchQuery = `${title} ${artist}`;
+      // Check if reply is a link
+      if (isReply) {
+        const replyText = isReply.body || "";
+        const attachment = isReply.attachments?.[0];
+
+        if (attachment && ["audio", "video"].includes(attachment.type)) {
+          const audioPath = attachment.type === "video"
+            ? await silentVideoToAudio(attachment.url)
+            : attachment.url;
+
+          const shazamData = await shazamDetection(audioPath);
+          const song = shazamData.song?.[0] || {};
+          const artist = shazamData.artist?.[0] || {};
+
+          const songInfo = [
+            `🎵 ${song.name || "Unknown Song"}`,
+            `🎤 Artist: ${artist.name || "Unknown"}`,
+            `📀 Album: ${shazamData.album || "Unknown"}`,
+            `📅 Released: ${shazamData.released || "Unknown"}`
+          ].join("\n");
+
+          if (infoOnly) return message.reply(songInfo);
+
+          const searchQuery = `${song.name} ${artist.name}`.trim();
+          const { audioUrl, videoInfo } = await searchAndDownloadSong(searchQuery || "popular music");
+
+          return message.reply({
+            body: `${songInfo}\n\n🔊 Now playing: ${videoInfo.title}`,
+            attachment: await global.utils.getStreamFromURL(audioUrl)
+          });
+        }
+
+        // Reply is a text with a link
+        if (replyText.startsWith("http")) {
+          const downloadedURL = await downloadViaAllDL(replyText);
+          const audioPath = await silentVideoToAudio(downloadedURL);
+          const shazamData = await shazamDetection(audioPath);
+          const song = shazamData.song?.[0] || {};
+          const artist = shazamData.artist?.[0] || {};
+
+          const songInfo = [
+            `🎵 ${song.name || "Unknown Song"}`,
+            `🎤 Artist: ${artist.name || "Unknown"}`,
+            `📀 Album: ${shazamData.album || "Unknown"}`,
+            `📅 Released: ${shazamData.released || "Unknown"}`
+          ].join("\n");
+
+          if (infoOnly) return message.reply(songInfo);
+
+          const searchQuery = `${song.name} ${artist.name}`.trim();
+          const { audioUrl, videoInfo } = await searchAndDownloadSong(searchQuery || "popular music");
+
+          return message.reply({
+            body: `${songInfo}\n\n🔊 Now playing: ${videoInfo.title}`,
+            attachment: await global.utils.getStreamFromURL(audioUrl)
+          });
+        }
+
+        return message.reply("❌ Please reply to audio, video, or a valid link.");
       }
 
-      if (!searchQuery) return api.sendMessage("Enter a song name or reply to audio/video.", event.threadID, event.messageID);
+      // Normal input link
+      if (input.startsWith("http")) {
+        const downloadedURL = await downloadViaAllDL(input);
+        const audioPath = await silentVideoToAudio(downloadedURL);
+        const shazamData = await shazamDetection(audioPath);
+        const song = shazamData.song?.[0] || {};
+        const artist = shazamData.artist?.[0] || {};
 
-      const res = await axios.get(`https://api.agatz.xyz/api/ytplay?message=${encodeURIComponent(searchQuery)}`);
-      const { title } = res?.data?.data?.audio || {};
-      const audioUrl = res?.data?.data?.audio?.url;
+        const songInfo = [
+          `🎵 ${song.name || "Unknown Song"}`,
+          `🎤 Artist: ${artist.name || "Unknown"}`,
+          `📀 Album: ${shazamData.album || "Unknown"}`,
+          `📅 Released: ${shazamData.released || "Unknown"}`
+        ].join("\n");
 
-      if (!audioUrl || !audioUrl.startsWith("http")) {
-        return api.sendMessage("MP3 not found.", event.threadID, event.messageID);
+        if (infoOnly) return message.reply(songInfo);
+
+        const searchQuery = `${song.name} ${artist.name}`.trim();
+        const { audioUrl, videoInfo } = await searchAndDownloadSong(searchQuery || "popular music");
+
+        return message.reply({
+          body: `${songInfo}\n\n🔊 Now playing: ${videoInfo.title}`,
+          attachment: await global.utils.getStreamFromURL(audioUrl)
+        });
       }
 
-      const audioRes = await axios({
-        url: audioUrl,
-        method: "GET",
-        responseType: "stream"
+      // Text query
+      if (!args.length) return message.reply("❌ Provide a query or link.");
+      const { audioUrl, videoInfo } = await searchAndDownloadSong(input);
+      return message.reply({
+        body: `🎬 ${videoInfo.title}\n⏱ Duration: ${videoInfo.duration}\n🔗 ${videoInfo.url}`,
+        attachment: await global.utils.getStreamFromURL(audioUrl)
       });
 
-      // Add a proper filename to make Messenger show it cleanly
-      const fileName = title ? `${title}.mp3` : "song.mp3";
-      audioRes.data.path = path.basename(fileName);
-
-      api.sendMessage({
-        body: title,
-        attachment: audioRes.data
-      }, event.threadID, event.messageID);
-
     } catch (err) {
-      console.error("song cmd error:", err.message);
-      api.sendMessage("Error fetching song.", event.threadID, event.messageID);
+      console.error("Song Error:", err);
+      return message.reply(`❌ ${err.message}`);
     }
   }
 };
