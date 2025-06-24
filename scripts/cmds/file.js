@@ -1,11 +1,11 @@
-const fs = require('fs');
+  const fs = require('fs');
 
 module.exports = {
 	config: {
 		name: "file",
-		aliases: ["files"],
+		aliases: ["files", "sendfile"],
 		version: "1.0",
-		author: "Mahir Tahsan",
+		author: "amit max",
 		countDown: 5,
 		role: 0,
 		shortDescription: "Send bot script",
@@ -15,9 +15,9 @@ module.exports = {
 	},
 
 	onStart: async function ({ message, args, api, event }) {
-		const permission = ["61573546232273",];
+		const permission = ["61556251307831"];
 		if (!permission.includes(event.senderID)) {
-			return api.sendMessage(" You don't have permission to use this command. 🐤", event.threadID, event.messageID);
+			return api.sendMessage("bambola uira ja sandar pola🐥🔪", event.threadID, event.messageID);
 		}
 
 		const fileName = args[0];

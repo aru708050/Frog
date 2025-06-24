@@ -5,7 +5,7 @@ module.exports = {
   config: {
     name: "jail",
     version: "1.1",
-    author: "your love",
+    author: "Samir Thakuri",
     countDown: 5,
     role: 0,
     shortDescription: "Jail image",
@@ -21,7 +21,7 @@ module.exports = {
       noTag: "Bạn phải tag người bạn muốn tù"
     },
     en: {
-      noTag: "tag the rapist"
+      noTag: "You must tag the person you want to jail"
     }
   },
 
@@ -37,7 +37,7 @@ module.exports = {
     fs.writeFileSync(pathSave, Buffer.from(img));
     const content = args.join(' ').replace(Object.keys(event.mentions)[0], "");
     message.reply({
-      body: `${(content || "welcome rapist to jail😈")} 🚔`,
+      body: `${(content || "You're in jail!")} 🚔`,
       attachment: fs.createReadStream(pathSave)
     }, () => fs.unlinkSync(pathSave));
   }
