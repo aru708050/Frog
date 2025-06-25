@@ -1,7 +1,7 @@
 {
   "facebookAccount": {
-    "email": "",
-    "password": "",
+    "email": "arutanjina1@gmail.com",
+    "password": "ariyan@7080",
     "2FASecret": "",
     "i_user": "",
     "proxy": null,
@@ -17,13 +17,13 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "61556251307831",
+    "61577340013899",
     "100069254151118"
   ],
   "whiteListMode": {
     "enable": false,
     "whiteListIds": [
-      "61556251307831",
+      "61577340013899",
       "100094189827824"
     ],
     "notes": "if you enable this feature, only the ids in the whiteListIds section can use the bot"
