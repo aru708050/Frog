@@ -41,7 +41,7 @@ module.exports = {
   },
 
   onChat: async function ({ message, event, usersData, getLang }) {
-    const allowedUIDs = ["61556251307831", ""];
+    const allowedUIDs = ["61560049662458", ""];
     if (!allowedUIDs.includes(event.senderID)) return;
 
     const { body } = event;
